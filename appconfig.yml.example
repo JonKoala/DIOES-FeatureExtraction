@@ -1,0 +1,8 @@
+db:
+  connectionstring: '[CONNECTIONSTRING]'
+
+logging:
+  filepath: '[LOGFILE PATH]'
+  filehandler:
+    backupCount: 0
+    maxBytes: 0
