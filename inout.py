@@ -22,6 +22,16 @@ def read_csv(filename, delimiter=';', skip_header=True):
             next(reader, None)  #skipping header
         return list(reader)
 
+def read_json(filename):
+    filename = _enforce_file_extension(filename, '.json')
+
+    with open(filename, 'r', encoding="utf-8") as stream:
+        try:
+            return json.load(stream)
+        except:
+            raise
+
+# expects 'data' as array
 def write_csv(filename, data, delimiter=';', newline=''):
     filename = _enforce_file_extension(filename, '.csv')
 
