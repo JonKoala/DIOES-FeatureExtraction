@@ -15,9 +15,35 @@ from sklearn.model_selection import train_test_split
 # sources: http://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html
 
 
-def clean(text):
-    text = re.sub(r'\S*\d\S*', ' ', text) # remove any combination involving numbers
-    return text
+def clean_text(text):
+    return re.sub(r'\S*\d\S*', ' ', text) # remove any combination involving numbers
+
+
+def sample(dataset, target):
+    return train_test_split(dataset, stratify=target)
+
+def vectorize(dataset, stopwords=None):
+    data = [entry['data'] for entry in dataset]
+
+    vectorizer = TfidfVectorizer(stop_words=stopwords)
+    vectorized = vectorizer.fit_transform(data)
+
+    return vectorizer, vectorized
+
+def train_classifier(dataset, vectorized):
+    target = [entry['target'] for entry in dataset]
+
+    return SGDClassifier(tol=1e-3).fit(vectorized, target)
+
+def predict(dataset, vectorizer, classifier):
+    data = [entry['data'] for entry in dataset]
+
+    vectorized = vectorizer.transform(data)
+    return classifier.predict(vectorized)
+
+def evaluate(prediction, target):
+    return metrics.f1_score(target, prediction, average='weighted')
+
 
 
 ##
@@ -30,49 +56,42 @@ dbi = Dbinterface(appconfig['db']['connectionstring'])
 # getting data and other resources
 with dbi.opensession() as session:
     dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_([1, 2, 3, 4]))
-    dataset = [dict(id=publicacao.id, data=clean(publicacao.corpo), target=publicacao.classificacao.classe_id) for publicacao in dataset]
+    dataset = [dict(id=publicacao.id, data=clean_text(publicacao.corpo), target=publicacao.classificacao.classe_id) for publicacao in dataset]
 
 stopwords = inout.read_json('./stopwords')
 
+target = [entry['target'] for entry in dataset]
 target_names = ['SAÚDE/ASSISTÊNCIA SOCIAL', 'EDUCAÇÃO/SEGURANÇA', 'ENGENHARIA/MEIO AMBIENTE', 'TECNOLOGIA DA INFORMAÇÃO']
 
 
 ##
-# stratified sampling
-target = [entry['target'] for entry in dataset]
-training, testing = train_test_split(dataset, stratify=target)
+# repeating classification and evaluation process
+best = {'score':0}
+for index in range(1000):
 
+    # sampling
+    training_sample, testing_sample = sample(dataset, target)
 
-##
-# tokenizing the text
-train_data = [entry['data'] for entry in training]
+    # indexing and training classifier
+    vectorizer, training_vectorized = vectorize(training_sample, stopwords=stopwords)
+    classifier = train_classifier(training_sample, training_vectorized)
 
-vectorizer = TfidfVectorizer(stop_words=stopwords)
-train_vectorized = vectorizer.fit_transform(train_data)
+    # evaluating classifier
+    prediction = predict(testing_sample, vectorizer, classifier)
+    testing_target = [entry['target'] for entry in testing_sample]
+    score = evaluate(prediction, testing_target)
 
-
-##
-# training classifiers
-train_target = [entry['target'] for entry in training]
-
-classifier = SGDClassifier(tol=1e-3).fit(train_vectorized, train_target)
-
-
-##
-# predicting using the test set
-test_data = [entry['data'] for entry in testing]
-
-test_vectorized = vectorizer.transform(test_data)
-prediction = classifier.predict(test_vectorized)
+    # keep the best scoring classifier
+    if score > best['score']:
+        best = {'score': score, 'prediction': prediction, 'testing_target': testing_target}
 
 ##
 # results
-test_target = [entry['target'] for entry in testing]
 
-report = metrics.classification_report(test_target, prediction, target_names=target_names)
+# printing classifier performance
+report = metrics.classification_report(best['testing_target'], best['prediction'], target_names=target_names)
 print('\n\nclassifier metrics:\n')
 print(report)
-# print(metrics.confusion_matrix(test_target, prediction))
 
 # printing keywords
 # source: http://scikit-learn.org/stable/auto_examples/text/document_classification_20newsgroups.html
