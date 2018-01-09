@@ -1,22 +1,27 @@
 from . import Base
 
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, Date, ForeignKey
 from sqlalchemy.orm import relationship, synonym
 
+
 class Publicacao(Base):
-    __tablename__ = 'Results_Crowdsourcer_DIOES3'
+    __tablename__ = 'Publicacao'
 
-    publicacao_id = Column(Integer, ForeignKey('DIOES3.id'), primary_key=True)
-    classe_id = Column(Integer, ForeignKey('Classe_DIOES3.id'))
-    publicacao = Column(String)
-    tipo_publicacao = Column(String)
-    dt_publicacao = Column(String)
-    classe = Column(String)
+    id = Column(Integer, primary_key=True)
+    edicao = Column(Integer)
+    numero = Column(Integer)
+    data = Column(Date)
+    categoria = Column(String)
+    orgao = Column(String)
+    suborgao = Column(String)
+    tipo = Column(String)
+    materia = Column(String)
+    identificador = Column(Integer)
+    corpo = Column(String)
 
-    id = synonym('publicacao_id')
-    tipo = synonym('tipo_publicacao')
-    texto = synonym('publicacao')
+    classificacao = relationship('Classificacao', uselist=False)
 
 
     def __repr__(self):
-        return '<Publicacao(id={}, tipo={}, data={}, classe={})>'.format(self.publicacao_id, self.tipo, self.dt_publicacao, self.classe)
+        return '<Publicacao(id={}, edicao={}, numero={}, data={}, categoria={}, orgao={}, suborgao={}, tipo={}, materia={}, identificador={}, corpo={})>'.format(
+            self.id, self.edicao, self.numero, self.data, self.categoria, self.orgao, self.suborgao, self.tipo, self.materia, self.identificador, self.corpo)

@@ -1,10 +1,9 @@
 import inout
 from db import Dbinterface
-from db.models import Publicacao
+from db.models import Publicacao, Classificacao
 
 import re
 import numpy as np
-from sqlalchemy import and_
 
 from sklearn import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -30,8 +29,8 @@ dbi = Dbinterface(appconfig['db']['connectionstring'])
 ##
 # getting data and other resources
 with dbi.opensession() as session:
-    dataset = session.query(Publicacao).filter(Publicacao.classe_id.in_([1, 2, 3, 4]))
-    dataset = [dict(id=entry.id, data=clean(entry.texto), target=entry.classe_id) for entry in dataset]
+    dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_([1, 2, 3, 4]))
+    dataset = [dict(id=publicacao.id, data=clean(publicacao.corpo), target=publicacao.classificacao.classe_id) for publicacao in dataset]
 
 stopwords = inout.read_json('./stopwords')
 
