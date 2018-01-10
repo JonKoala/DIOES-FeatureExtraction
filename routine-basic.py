@@ -1,6 +1,7 @@
 import inout
 from db import Dbinterface
 from db.models import Publicacao, Classificacao
+from classification import Dataset, DatasetEntry
 
 import re
 import numpy as np
@@ -19,33 +20,6 @@ def clean_text(text):
     return re.sub(r'\S*\d\S*', ' ', text) # remove any combination involving numbers
 
 
-def sample(dataset, target):
-    return train_test_split(dataset, stratify=target)
-
-def vectorize(dataset, stopwords=None):
-    data = [entry['data'] for entry in dataset]
-
-    vectorizer = TfidfVectorizer(stop_words=stopwords)
-    vectorized = vectorizer.fit_transform(data)
-
-    return vectorizer, vectorized
-
-def train_classifier(dataset, vectorized):
-    target = [entry['target'] for entry in dataset]
-
-    return SGDClassifier(tol=1e-3).fit(vectorized, target)
-
-def predict(dataset, vectorizer, classifier):
-    data = [entry['data'] for entry in dataset]
-
-    vectorized = vectorizer.transform(data)
-    return classifier.predict(vectorized)
-
-def evaluate(prediction, target):
-    return metrics.f1_score(target, prediction, average='weighted')
-
-
-
 ##
 # getting appconfig
 appconfig = inout.read_yaml('./appconfig')
@@ -56,11 +30,10 @@ dbi = Dbinterface(appconfig['db']['connectionstring'])
 # getting data and other resources
 with dbi.opensession() as session:
     dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_([1, 2, 3, 4]))
-    dataset = [dict(id=publicacao.id, data=clean_text(publicacao.corpo), target=publicacao.classificacao.classe_id) for publicacao in dataset]
+    dataset = Dataset([DatasetEntry(publicacao.id, clean_text(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in dataset])
 
 stopwords = inout.read_json('./stopwords')
 
-target = [entry['target'] for entry in dataset]
 target_names = ['SAÚDE/ASSISTÊNCIA SOCIAL', 'EDUCAÇÃO/SEGURANÇA', 'ENGENHARIA/MEIO AMBIENTE', 'TECNOLOGIA DA INFORMAÇÃO']
 
 
@@ -69,21 +42,43 @@ target_names = ['SAÚDE/ASSISTÊNCIA SOCIAL', 'EDUCAÇÃO/SEGURANÇA', 'ENGENHAR
 best = {'score':0}
 for index in range(1000):
 
+    ##
     # sampling
-    training_sample, testing_sample = sample(dataset, target)
 
-    # indexing and training classifier
-    vectorizer, training_vectorized = vectorize(training_sample, stopwords=stopwords)
-    classifier = train_classifier(training_sample, training_vectorized)
+    training_sample, testing_sample = train_test_split(dataset, stratify=dataset.target)
+    training_set = Dataset(training_sample)
+    testing_set = Dataset(testing_sample)
 
+
+    ##
+    # tokenizing
+
+    vectorizer = TfidfVectorizer(stop_words=stopwords)
+
+    # vectorizing the training data
+    training_data_vectorized = vectorizer.fit_transform(training_set.data)
+
+
+    ##
+    # training classifier
+
+    classifier = SGDClassifier().fit(training_data_vectorized, training_set.target)
+
+
+    ##
     # evaluating classifier
-    prediction = predict(testing_sample, vectorizer, classifier)
-    testing_target = [entry['target'] for entry in testing_sample]
-    score = evaluate(prediction, testing_target)
+
+    # vectorizing testing data and predicting classes
+    testing_data_vectorized = vectorizer.transform(testing_set.data)
+    testing_prediction = classifier.predict(testing_data_vectorized)
+
+    #scoring classifier
+    score = metrics.f1_score(testing_set.target, testing_prediction, average='weighted')
+
 
     # keep the best scoring classifier
     if score > best['score']:
-        best = {'score': score, 'prediction': prediction, 'testing_target': testing_target}
+        best = {'score': score, 'prediction': testing_prediction, 'testing_target': testing_set.target}
 
 ##
 # results
