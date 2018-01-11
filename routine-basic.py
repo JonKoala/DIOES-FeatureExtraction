@@ -1,14 +1,10 @@
 import inout
 from db import Dbinterface
 from db.models import Publicacao, Classificacao
-from classification import Dataset, DatasetEntry
+from classification import Dataset, DatasetEntry, Classifier, Vectorizer, evaluation
 
 import re
-import numpy as np
 
-from sklearn import metrics
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import train_test_split
 
 
@@ -21,78 +17,60 @@ def clean_text(text):
 
 
 ##
-# getting appconfig
+# load configurations and get resources
+
 appconfig = inout.read_yaml('./appconfig')
 dbi = Dbinterface(appconfig['db']['connectionstring'])
 
-
-##
-# getting data and other resources
 with dbi.opensession() as session:
-    dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_([1, 2, 3, 4]))
-    dataset = Dataset([DatasetEntry(publicacao.id, clean_text(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in dataset])
+    publicacoes = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_([1, 2, 3, 4]))
+    dataset = Dataset([DatasetEntry(publicacao.id, clean_text(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in publicacoes])
 
 stopwords = inout.read_json('./stopwords')
 
-target_names = ['SAÚDE/ASSISTÊNCIA SOCIAL', 'EDUCAÇÃO/SEGURANÇA', 'ENGENHARIA/MEIO AMBIENTE', 'TECNOLOGIA DA INFORMAÇÃO']
+class_names = ['SAÚDE/ASSISTÊNCIA SOCIAL', 'EDUCAÇÃO/SEGURANÇA', 'ENGENHARIA/MEIO AMBIENTE', 'TECNOLOGIA DA INFORMAÇÃO']
 
 
 ##
-# repeating classification and evaluation process
+# find best classifier
+
 best = {'score':0}
 for index in range(1000):
 
-    ##
     # sampling
-
     training_sample, testing_sample = train_test_split(dataset, stratify=dataset.target)
     training_set = Dataset(training_sample)
     testing_set = Dataset(testing_sample)
 
 
-    ##
-    # tokenizing
+    # tokenize training sample
+    vectorizer = Vectorizer(training_set.data, stopwords=stopwords)
 
-    vectorizer = TfidfVectorizer(stop_words=stopwords)
+    # train classifier
+    classifier = Classifier(vectorizer.transform(training_set.data), training_set.target)
 
-    # vectorizing the training data
-    training_data_vectorized = vectorizer.fit_transform(training_set.data)
+    # predict testing set classes
+    prediction = classifier.predict(vectorizer.transform(testing_set.data))
 
-
-    ##
-    # training classifier
-
-    classifier = SGDClassifier().fit(training_data_vectorized, training_set.target)
-
-
-    ##
-    # evaluating classifier
-
-    # vectorizing testing data and predicting classes
-    testing_data_vectorized = vectorizer.transform(testing_set.data)
-    testing_prediction = classifier.predict(testing_data_vectorized)
-
-    #scoring classifier
-    score = metrics.f1_score(testing_set.target, testing_prediction, average='weighted')
-
+    # evaluate classifier prediction
+    score = evaluation.score(prediction, testing_set.target)
 
     # keep the best scoring classifier
     if score > best['score']:
-        best = {'score': score, 'prediction': testing_prediction, 'testing_target': testing_set.target}
+        best = {'score': score, 'classifier': classifier, 'vectorizer': vectorizer, 'prediction': prediction, 'testing_target': testing_set.target}
+
 
 ##
-# results
+# show classifier statistics and classes keywords
 
-# printing classifier performance
-report = metrics.classification_report(best['testing_target'], best['prediction'], target_names=target_names)
+# print classifier performance
 print('\n\nclassifier metrics:\n')
-print(report)
+print(evaluation.make_report(best['prediction'], best['testing_target'], class_names))
 
-# printing keywords
+# print classes keywords
 # source: http://scikit-learn.org/stable/auto_examples/text/document_classification_20newsgroups.html
 print('\n\nkeywords:\n')
-feature_names = vectorizer.get_feature_names()
-for index, label in enumerate(target_names):
-    top5 = np.argsort(classifier.coef_[index])[-5:]
-    keywords = [feature_names[i] for i in top5]
-    print('{}: {}'.format(label, ', '.join(keywords)))
+for index, label in enumerate(class_names):
+    top5 = best['classifier'].class_features[index][-5:]
+    keywords = [best['vectorizer'].features[i] for i in top5]
+    print('{}: {}'.format(label, ', '.join(reversed(keywords))))
