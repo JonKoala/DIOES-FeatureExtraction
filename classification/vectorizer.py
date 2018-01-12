@@ -16,9 +16,8 @@ class Vectorizer:
 
     @property
     def corpus(self):
-        return self._corpus
+        return None
 
     @corpus.setter
     def corpus(self, value):
-        self._corpus = value
-        self._learn(self._corpus)
+        self._learn(value)

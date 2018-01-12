@@ -1,6 +1,11 @@
 db:
   connectionstring: '[CONNECTIONSTRING]'
 
+classifier:
+  classes: []
+  num_tries: 0
+  filepath: '[CLASSIFIER MODELS PATH]'
+
 logging:
   filepath: '[LOGFILE PATH]'
   filehandler:

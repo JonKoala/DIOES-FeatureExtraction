@@ -2,11 +2,12 @@ import csv
 import json
 import os
 import yaml
+from sklearn.externals import joblib
 
 def read_yaml(filename):
     filename = _enforce_file_extension(filename, '.yml')
 
-    with open(filename, 'r') as stream:
+    with open(filename, 'r', encoding="utf-8") as stream:
         try:
             return yaml.load(stream)
         except:
@@ -31,6 +32,12 @@ def read_json(filename):
         except:
             raise
 
+def read_pkl(filename):
+    filename = _enforce_file_extension(filename, '.pkl')
+
+    with open(filename, 'rb') as pklfile:
+        return joblib.load(pklfile)
+
 # expects 'data' as array
 def write_csv(filename, data, delimiter=';', newline=''):
     filename = _enforce_file_extension(filename, '.csv')
@@ -48,13 +55,20 @@ def write_json(filename, data):
     with open(filename, 'w') as jsonfile:
         jsonfile.write(text)
 
+def write_pkl(filename, data):
+    filename = _enforce_file_extension(filename, '.pkl')
+
+    _enforce_path(filename)
+    with open(filename, 'wb') as pklfile:
+        joblib.dump(data, pklfile)
+
 
 ##
-#UTILS
+# UTILS
 
 def _enforce_file_extension(filename, extension):
 
-    #enforcing that the extension name has a preceding dot
+    # enforce that the extension name has a preceding dot
     extension = extension if extension[0] == '.' else '.' + extension
 
     file_extension = os.path.splitext(filename)[1]
