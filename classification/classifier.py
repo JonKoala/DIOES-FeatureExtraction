@@ -14,6 +14,10 @@ class Classifier:
     def predict(self, data):
         return self.model.predict(data)
 
+    @property
+    def classes(self):
+        return self.model.classes_
+
     # sorted features for each class
     @property
     def class_features(self):

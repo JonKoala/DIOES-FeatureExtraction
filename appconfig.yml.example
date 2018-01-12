@@ -3,7 +3,9 @@ db:
 
 classifier:
   classes: []
+  tipos_publicacoes: []
   num_tries: 0
+  num_keywords: 0
   filepath: '[CLASSIFIER MODELS PATH]'
 
 logging:
