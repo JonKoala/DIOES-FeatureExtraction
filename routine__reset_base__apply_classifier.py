@@ -4,7 +4,6 @@ from db.models import Publicacao, Classe, Classificacao, Predicao, Keyword
 from classification import Dataset, DatasetEntry, Classifier, Vectorizer, evaluation
 
 import numpy as np
-from sqlalchemy import and_
 
 
 ##
@@ -14,12 +13,7 @@ appconfig = inout.read_yaml('./appconfig')
 dbi = Dbinterface(appconfig['db']['connectionstring'])
 
 with dbi.opensession() as session:
-    already_predicted = session.query(Predicao.publicacao_id)
-    publicacoes = session.query(Publicacao).filter(and_(
-        Publicacao.tipo.in_(appconfig['classifier']['tipos_publicacoes']),
-        Publicacao.id.notin_(already_predicted)
-    ))
-    
+    publicacoes = session.query(Publicacao).filter(Publicacao.tipo.in_(appconfig['classifier']['tipos_publicacoes']))
     publicacoes = [(publicacao.id, publicacao.corpo) for publicacao in publicacoes]
 ids, corpus = zip(*publicacoes)
 
@@ -54,9 +48,22 @@ for index, classe in enumerate(classifier.classes):
 
 with dbi.opensession() as session:
 
+    # clean old entries
+    session.query(Predicao).delete()
+    session.query(Keyword).delete()
+    session.flush()
+
     # insert new predicoes
     for result in results:
         predicao = Predicao(publicacao_id=result[0], classe_id=np.asscalar(result[1]))
         session.add(predicao)
+
+    # insert new keywords
+    for classe_keywords in classes_keywords:
+        classe = classe_keywords[0]
+        keywords = classe_keywords[1]
+        for keyword in keywords:
+            entry = Keyword(classe_id=np.asscalar(classe), palavra=keyword)
+            session.add(entry)
 
     session.commit()
