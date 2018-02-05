@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 class Vectorizer:
 
     def __init__(self, corpus, stopwords=None):
-        self.vectorspace = TfidfVectorizer(stop_words=stopwords)
+        self.vectorspace = TfidfVectorizer(strip_accents='ascii', stop_words=stopwords)
         self.corpus = corpus
 
     def _learn(self, data):
