@@ -1,6 +1,6 @@
 import inout
 from db import Dbinterface
-from db.models import Publicacao, Classe, Classificacao, Predicao, Keyword
+from db.models import Publicacao, Classe, Classificacao, Predicao
 from classification import Dataset, DatasetEntry, Classifier, Vectorizer, evaluation
 
 import numpy as np
@@ -39,18 +39,7 @@ results = zip(ids, predictions)
 
 
 ##
-# Get classes keywords
-
-num_keywords = appconfig['classifier']['num_keywords']
-classes_keywords = []
-for index, classe in enumerate(classifier.classes):
-    top_features = classifier.class_features[index][-1*num_keywords:]
-    keywords = [vectorizer.features[i] for i in top_features]
-    classes_keywords.append((classe, reversed(keywords)))
-
-
-##
-# Persist predictions and keywords on database
+# Persist predictions on database
 
 with dbi.opensession() as session:
 
