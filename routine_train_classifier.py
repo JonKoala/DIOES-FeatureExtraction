@@ -1,6 +1,6 @@
 import inout
 from db import Dbinterface
-from db.models import Publicacao, Classe, Classificacao
+from db.models import Publicacao, Classe, Classificacao, Blacklisted
 from classification import Dataset, DatasetEntry, Classifier, Vectorizer, evaluation
 
 import re
@@ -22,12 +22,15 @@ appconfig = inout.read_yaml('./appconfig')
 dbi = Dbinterface(appconfig['db']['connectionstring'])
 
 with dbi.opensession() as session:
+    blacklist = list(session.query(Blacklisted.palavra))
     classes = list(session.query(Classe).filter(Classe.nome.in_(appconfig['classifier']['classes'])))
     publicacoes = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
 
     dataset = Dataset([DatasetEntry(publicacao.id, clean_text(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in publicacoes])
 
 stopwords = inout.read_json('./stopwords')
+blacklist = [entry[0] for entry in blacklist]
+blacklist += stopwords
 
 
 ##
@@ -43,7 +46,7 @@ for index in range(appconfig['classifier']['num_tries']):
 
 
     # tokenize training sample
-    vectorizer = Vectorizer(training_set.data, stopwords=stopwords)
+    vectorizer = Vectorizer(training_set.data, stopwords=blacklist)
 
     # train classifier
     classifier = Classifier(vectorizer.transform(training_set.data), training_set.target)
