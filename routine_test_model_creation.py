@@ -68,17 +68,3 @@ for index in range(appconfig['classifier']['num_tries']):
 # print classifier performance
 print('\n\nclassifier metrics:\n')
 print(evaluation.make_report(best['prediction'], best['testing_target'], [classe.nome for classe in classes]))
-
-# print classes keywords
-print('\n\nkeywords:\n')
-for index, label in enumerate(classe.nome for classe in classes):
-    top5 = best['classifier'].class_features[index][-5:]
-    keywords = [best['vectorizer'].features[i] for i in top5]
-    print('{}: {}'.format(label, ', '.join(reversed(keywords))))
-
-
-##
-# Persist models
-
-models = {key:best[key] for key in ['classifier', 'vectorizer']}
-inout.write_pkl(appconfig['classifier']['filepath'], models)
