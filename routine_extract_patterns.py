@@ -44,7 +44,7 @@ dbi = Dbinterface(appconfig['db']['connectionstring'])
 # get publicacoes
 with dbi.opensession() as session:
     to_extract = session.query(Predicao).join(Predicao.publicacao)
-    if reset_base:
+    if not reset_base:
         already_extracted = session.query(Patterns.publicacao_id)
         to_extract = to_extract.filter(Predicao.publicacao_id.notin_(already_extracted))
 
