@@ -4,9 +4,11 @@ db:
 classifier:
   classes: []
   tipos_publicacoes: []
-  num_tries: 0
   num_keywords: 0
-  filepath: '[CLASSIFIER MODELS PATH]'
+
+tuning:
+  cv_num_splits: 3
+  params_filepath: '[TUNING RESULTS PATH]'
 
 logging:
   filepath: '[LOGFILE PATH]'
