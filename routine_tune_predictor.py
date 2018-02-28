@@ -39,10 +39,10 @@ blacklist = stopwords + [entry[0] for entry in blacklist]
 pipeline = Classifier(stop_words=blacklist).pipeline
 cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=appconfig['tuning']['cv_num_splits'])
 param_grid = {
-    'vectorizer__ngram_range': ((1, 1), (1, 2)),
     'vectorizer__max_df': (0.5, 0.75, 1.0),
+    'vectorizer__min_df': (1, 2, 3, 4, 5, 0.01),
     'vectorizer__sublinear_tf': (True, False),
-    'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_loss', 'huber'),
+    'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_loss', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive'),
     'classifier__penalty': ('l2', 'l1', 'elasticnet'),
     'classifier__alpha': 10.0**-np.arange(1,7),
     'classifier__tol': (None, 1e-2, 1e-3, 1e-4),

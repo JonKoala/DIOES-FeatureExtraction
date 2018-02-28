@@ -1,7 +1,7 @@
 import inout
 from classification import Classifier, Dataset, DatasetEntry, evaluation
 from db import Dbinterface
-from db.models import Blacklisted, Classe, Classificacao, Keyword, Predicao, Publicacao
+from db.models import Classe, Classificacao, Keyword_Backlisted, Keyword, Predicao_Classificacao, Publicacao
 
 import argparse
 import numpy as np
@@ -31,7 +31,7 @@ appconfig = inout.read_yaml('./appconfig')
 dbi = Dbinterface(appconfig['db']['connectionstring'])
 
 with dbi.opensession() as session:
-    blacklist = list(session.query(Blacklisted.palavra))
+    blacklist = list(session.query(Keyword_Backlisted.palavra))
     classes = list(session.query(Classe).filter(Classe.nome.in_(appconfig['classifier']['classes'])))
 
     # get crowdsourced data
@@ -41,7 +41,7 @@ with dbi.opensession() as session:
     # get data to predict
     to_predict = session.query(Publicacao).filter(Publicacao.tipo.in_(appconfig['classifier']['tipos_publicacoes']))
     if not reset_base:
-        already_predicted = session.query(Predicao.publicacao_id)
+        already_predicted = session.query(Predicao_Classificacao.publicacao_id)
         to_predict = to_predict.filter(Publicacao.id.notin_(already_predicted))
     to_predict = [(publicacao.id, publicacao.corpo) for publicacao in to_predict]
 
@@ -84,12 +84,12 @@ with dbi.opensession() as session:
     # clean old entries
     session.query(Keyword).delete()
     if reset_base:
-        session.query(Predicao).delete()
+        session.query(Predicao_Classificacao).delete()
         session.flush()
 
     # insert predicoes
     for result in results:
-        predicao = Predicao(publicacao_id=result[0], classe_id=np.asscalar(result[1]))
+        predicao = Predicao_Classificacao(publicacao_id=result[0], classe_id=np.asscalar(result[1]))
         session.add(predicao)
 
     # insert keywords

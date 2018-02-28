@@ -1,6 +1,6 @@
 import inout
 from db import Dbinterface
-from db.models import Publicacao, Predicao, Patterns
+from db.models import Publicacao, Predicao_Classificacao, Predicao_Regex
 
 import argparse
 import re
@@ -43,10 +43,10 @@ dbi = Dbinterface(appconfig['db']['connectionstring'])
 
 # get publicacoes
 with dbi.opensession() as session:
-    to_extract = session.query(Predicao).join(Predicao.publicacao)
+    to_extract = session.query(Predicao_Classificacao).join(Predicao_Classificacao.publicacao)
     if not reset_base:
-        already_extracted = session.query(Patterns.publicacao_id)
-        to_extract = to_extract.filter(Predicao.publicacao_id.notin_(already_extracted))
+        already_extracted = session.query(Predicao_Regex.publicacao_id)
+        to_extract = to_extract.filter(Predicao_Classificacao.publicacao_id.notin_(already_extracted))
 
     data = [(predicao.publicacao.id, predicao.publicacao.corpo) for predicao in to_extract]
 
@@ -75,12 +75,12 @@ with dbi.opensession() as session:
 
     # clean old entries
     if reset_base:
-        session.query(Patterns).delete()
+        session.query(Predicao_Regex).delete()
         session.flush()
 
     # insert new patterns
     for result in results:
-        patterns = Patterns(publicacao_id=result[0], valor=result[1])
-        session.add(patterns)
+        predicao_regex = Predicao_Regex(publicacao_id=result[0], valor=result[1])
+        session.add(predicao_regex)
 
     session.commit()

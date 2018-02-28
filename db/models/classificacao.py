@@ -5,12 +5,10 @@ from sqlalchemy.orm import relationship, synonym
 
 
 class Classificacao(Base):
-    __tablename__ = 'Classificacao_DIOES3'
+    __tablename__ = 'Classificacao'
 
-    DIOES3_id = Column(Integer, ForeignKey('Publicacao.id'), primary_key=True)
-    classe_id = Column(Integer, ForeignKey('Classe_DIOES3.id'))
-
-    publicacao_id = synonym('DIOES3_id')
+    publicacao_id = Column(Integer, ForeignKey('Publicacao.id'), primary_key=True)
+    classe_id = Column(Integer, ForeignKey('Classe.id'))
 
     publicacao = relationship('Publicacao', uselist=False)
 

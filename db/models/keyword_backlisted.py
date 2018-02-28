@@ -3,8 +3,8 @@ from . import Base
 from sqlalchemy import Column, Integer, String
 
 
-class Blacklisted(Base):
-    __tablename__ = 'Backlist_Palavra_DIOES3'
+class Keyword_Backlisted(Base):
+    __tablename__ = 'Keyword_Backlisted'
 
     id = Column(Integer, primary_key=True)
     palavra = Column(String)

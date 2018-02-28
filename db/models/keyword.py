@@ -5,10 +5,10 @@ from sqlalchemy.orm import relationship, synonym
 
 
 class Keyword(Base):
-    __tablename__ = 'Classe_Keyword_DIOES3'
+    __tablename__ = 'Keyword'
 
     id = Column(Integer, primary_key=True)
-    classe_id = Column(Integer, ForeignKey('Classe_DIOES3.id'))
+    classe_id = Column(Integer, ForeignKey('Classe.id'))
     palavra = Column(String)
 
 

@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, synonym
 
 
 class Classe(Base):
-    __tablename__ = 'Classe_DIOES3'
+    __tablename__ = 'Classe'
 
     id = Column(Integer, primary_key=True)
     nome = Column(String)

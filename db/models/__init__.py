@@ -3,7 +3,7 @@ from ._base import Base
 from .classe import Classe
 from .classificacao import Classificacao
 from .keyword import Keyword
-from .blacklisted import Blacklisted
+from .keyword_backlisted import Keyword_Backlisted
 from .publicacao import Publicacao
-from .predicao import Predicao
-from .patterns import Patterns
+from .predicao_classificacao import Predicao_Classificacao
+from .predicao_regex import Predicao_Regex
