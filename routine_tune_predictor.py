@@ -1,7 +1,7 @@
 import inout
 from classification import Dataset, DatasetEntry, Classifier, evaluation
 from db import Dbinterface
-from db.models import Publicacao, Classe, Classificacao, Blacklisted
+from db.models import Classe, Classificacao, Keyword_Backlisted, Publicacao
 
 import numpy as np
 import re
@@ -22,7 +22,7 @@ appconfig = inout.read_yaml('./appconfig')
 dbi = Dbinterface(appconfig['db']['connectionstring'])
 
 with dbi.opensession() as session:
-    blacklist = list(session.query(Blacklisted.palavra))
+    blacklist = list(session.query(Keyword_Backlisted.palavra))
     classes = list(session.query(Classe).filter(Classe.nome.in_(appconfig['classifier']['classes'])))
     publicacoes = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
 
@@ -40,7 +40,7 @@ pipeline = Classifier(stop_words=blacklist).pipeline
 cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=appconfig['tuning']['cv_num_splits'])
 param_grid = {
     'vectorizer__max_df': (0.5, 0.75, 1.0),
-    'vectorizer__min_df': (1, 2, 3, 4, 5, 0.01),
+    'vectorizer__min_df': (1, 3, 5, 0.01),
     'vectorizer__sublinear_tf': (True, False),
     'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_loss', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive'),
     'classifier__penalty': ('l2', 'l1', 'elasticnet'),
