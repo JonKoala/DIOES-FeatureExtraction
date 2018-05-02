@@ -6,7 +6,7 @@ from sklearn.pipeline import Pipeline
 class Classifier:
 
     train_steps = [('vectorizer', TfidfVectorizer()), ('classifier', SGDClassifier())]
-    model_default_params = {'vectorizer__strip_accents': 'ascii'}
+    model_default_params = {'vectorizer__sublinear_tf': True}
 
     @classmethod
     def default_pipeline(cls):

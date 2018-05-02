@@ -2,6 +2,7 @@ import inout
 from classification import Classifier, Dataset, DatasetEntry, evaluation
 from db import Dbinterface
 from db.models import Classe, Classificacao, Keyword_Backlisted, Keyword, Predicao_Classificacao, Publicacao
+from nlp import Preprocessor
 
 import argparse
 import numpy as np
@@ -51,11 +52,22 @@ blacklist = stopwords + [entry[0] for entry in blacklist]
 
 
 ##
-# Train the classifier
+# preprocess stopwords and set hyperparameters
 
-params = inout.read_json(appconfig['tuning']['params_filepath'])
+prep = Preprocessor()
 
-classifier = Classifier(params, blacklist)
+# preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process (and i preprocess my tokens in the tokenization process)
+# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
+blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in blacklist]
+
+hyperparams = inout.read_json(appconfig['tuning']['params_filepath'])
+hyperparams = {**{'vectorizer__tokenizer': prep.build_tokenizer(), 'classifier__max_iter': 1000}, **hyperparams}
+
+
+##
+# Train the model
+
+classifier = Classifier(hyperparams, blacklist)
 classifier.train(training_dataset.data, training_dataset.target)
 
 

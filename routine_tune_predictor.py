@@ -2,6 +2,7 @@ import inout
 from classification import Dataset, DatasetEntry, Classifier, evaluation
 from db import Dbinterface
 from db.models import Classe, Classificacao, Keyword_Backlisted, Publicacao
+from nlp import Preprocessor
 
 import numpy as np
 import re
@@ -35,17 +36,23 @@ blacklist = stopwords + [entry[0] for entry in blacklist]
 ##
 # Model tuning
 
+prep = Preprocessor()
+
+# preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process (and i preprocess my tokens in the tokenization process)
+# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
+blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in blacklist]
+
+
 # prepare tuning tools
-pipeline = Classifier(stop_words=blacklist).pipeline
+pipeline = Classifier(params={'vectorizer__tokenizer': prep.build_tokenizer()}, stop_words=blacklist).pipeline
 cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=appconfig['tuning']['cv_num_splits'])
 param_grid = {
     'vectorizer__max_df': (0.5, 0.75, 1.0),
-    'vectorizer__min_df': (1, 3, 5, 0.01),
-    'vectorizer__sublinear_tf': (True, False),
-    'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_loss', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive'),
+    'vectorizer__min_df': (1, 2),
+    'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'),
     'classifier__penalty': ('l2', 'l1', 'elasticnet'),
-    'classifier__alpha': 10.0**-np.arange(1,7),
-    'classifier__tol': (None, 1e-2, 1e-3, 1e-4),
+    'classifier__alpha': (1e-2, 1e-3, 1e-4),
+    'classifier__tol': (None, 1e-2, 1e-3),
     'classifier__class_weight': (None, 'balanced')
 }
 
