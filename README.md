@@ -3,6 +3,7 @@ Ferramenta para extração de informações dos artigos obtidos pelo [diariobot-
 
 ### Requisitos
  - [Python](https://www.python.org/) >= 3.6
+   - [NLTK](https://www.nltk.org/)
    - [NumPy](http://www.numpy.org/)
    - [PyYAML](http://pyyaml.org/wiki/PyYAML)
    - [scikit-learn](http://scikit-learn.org/)
@@ -31,7 +32,6 @@ logging:
   filehandler:
     backupCount: 0
     maxBytes: 0
-
 ```
 Note que o valor informado para a `connectionstring` deve seguir o padrão do [PyODBC](http://docs.sqlalchemy.org/en/latest/dialects/mssql.html#pass-through-exact-pyodbc-string).
 
