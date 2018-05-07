@@ -20,11 +20,11 @@ reset_base = parser.parse_args().full
 # Utils
 
 # regex patterns
-re_money = re.compile('\$\s*[1-9][\d\.,]*\d')
+re_money = re.compile('\$:*\s*[1-9][\d\.,]*\d')
 re_fractional_part = re.compile('[\.,]\d{1,2}$')
 
 def to_decimal(match):
-    treated = ''.join(match.group(0).split()).replace('$', '')
+    treated = ''.join(match.group(0).split()).replace('$', '').replace(':', '')
 
     integer_match = re.split(re_fractional_part, treated)
     integer_part = re.sub('[\.,]', '', integer_match[0])
@@ -57,7 +57,7 @@ with dbi.opensession() as session:
 results = []
 for index, publicacao in enumerate(data):
 
-    #get values from publicacao
+    # get values from publicacao
     iter_matches = re.finditer(re_money, publicacao[1])
     values = [to_decimal(match) for match in iter_matches]
 
