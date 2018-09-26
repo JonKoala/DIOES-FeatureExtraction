@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import inout
 from db import Dbinterface
 from db.models import Publicacao, Predicao_Classificacao, Predicao_Regex

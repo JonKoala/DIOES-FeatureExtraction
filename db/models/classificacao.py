@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from . import Base
 
 from sqlalchemy import Column, Integer, String, Numeric, Date, ForeignKey

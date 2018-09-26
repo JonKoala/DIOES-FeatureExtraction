@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import inout
 from classification import Dataset, DatasetEntry, Classifier, evaluation
 from db import Dbinterface
