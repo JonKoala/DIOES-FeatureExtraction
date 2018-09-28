@@ -8,6 +8,7 @@ from db.models import Classe, Classificacao, Keyword_Backlisted, Publicacao
 from nlp import Preprocessor
 
 import numpy as np
+import os
 import re
 from sklearn import model_selection
 
@@ -23,7 +24,9 @@ def remove_numbers(text):
 # Get resources
 
 appconfig = inout.read_yaml('./appconfig')
-dbi = Dbinterface(appconfig['db']['connectionstring'])
+
+connectionstring = os.getenv('DIARIOBOT_DATABASE_CONNECTIONSTRING', appconfig['db']['connectionstring'])
+dbi = Dbinterface(connectionstring)
 
 with dbi.opensession() as session:
     blacklist = list(session.query(Keyword_Backlisted.palavra))

@@ -6,6 +6,7 @@ from db import Dbinterface
 from db.models import Publicacao, Predicao_Classificacao, Predicao_Regex
 
 import argparse
+import os
 import re
 from decimal import Decimal
 
@@ -42,7 +43,9 @@ def to_decimal(match):
 # Get resources
 
 appconfig = inout.read_yaml('./appconfig')
-dbi = Dbinterface(appconfig['db']['connectionstring'])
+
+connectionstring = os.getenv('DIARIOBOT_DATABASE_CONNECTIONSTRING', appconfig['db']['connectionstring'])
+dbi = Dbinterface(connectionstring)
 
 # get publicacoes
 with dbi.opensession() as session:
