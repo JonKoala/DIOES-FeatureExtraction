@@ -53,12 +53,13 @@ blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in b
 pipeline = Classifier(params={'vectorizer__tokenizer': prep.build_tokenizer()}, stop_words=blacklist).pipeline
 cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=appconfig['tuning']['cv_num_splits'])
 param_grid = {
-    'vectorizer__max_df': (0.5, 0.75, 1.0),
-    'vectorizer__min_df': (1, 2),
+    'vectorizer__max_df': (0.25, 0.5, 0.75, 1.0),
+    'vectorizer__min_df': (1, 2, 3),
+    'vectorizer__binary': (True, False),
     'classifier__loss': ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron'),
     'classifier__penalty': ('l2', 'l1', 'elasticnet'),
     'classifier__alpha': (1e-2, 1e-3, 1e-4),
-    'classifier__tol': (None, 1e-2, 1e-3),
+    'classifier__tol': (None, 1e-2, 1e-3, 1e-4),
     'classifier__class_weight': (None, 'balanced')
 }
 
