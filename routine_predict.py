@@ -6,6 +6,7 @@ from classification import Classifier, Dataset, DatasetEntry, evaluation
 from db import Dbinterface
 from db.models import Classe, Classificacao, Keyword_Backlisted, Keyword, Predicao_Classificacao, Publicacao
 from nlp import Preprocessor
+from utils import classe_filters, get_tunning_params, publicacao_tipo_filters
 
 import argparse
 import numpy as np
@@ -32,21 +33,17 @@ def remove_numbers(text):
 ##
 # Get resources
 
-appconfig = inout.read_yaml('./appconfig')
-
-connectionstring = os.getenv('DIARIOBOT_DATABASE_CONNECTIONSTRING', appconfig['db']['connectionstring'])
-dbi = Dbinterface(connectionstring)
-
+dbi = Dbinterface(os.environ['DIARIOBOT_DATABASE_CONNECTIONSTRING'])
 with dbi.opensession() as session:
     blacklist = list(session.query(Keyword_Backlisted.palavra))
-    classes = list(session.query(Classe).filter(Classe.nome.in_(appconfig['classifier']['classes'])))
+    classes = list(session.query(Classe).filter(Classe.nome.in_(classe_filters)))
 
     # get crowdsourced data
     training_dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
     training_dataset = Dataset([DatasetEntry(publicacao.id, remove_numbers(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in training_dataset])
 
     # get data to predict
-    to_predict = session.query(Publicacao).filter(Publicacao.tipo.in_(appconfig['classifier']['tipos_publicacoes']))
+    to_predict = session.query(Publicacao).filter(Publicacao.tipo.in_(publicacao_tipo_filters))
     if not reset_base:
         already_predicted = session.query(Predicao_Classificacao.publicacao_id)
         to_predict = to_predict.filter(Publicacao.id.notin_(already_predicted))
@@ -66,8 +63,7 @@ prep = Preprocessor()
 # source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
 blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in blacklist]
 
-hyperparams = inout.read_json(appconfig['tuning']['params_filepath'])
-hyperparams = {**{'vectorizer__tokenizer': prep.build_tokenizer(), 'classifier__max_iter': 1000}, **hyperparams}
+hyperparams = {**{'vectorizer__tokenizer': prep.build_tokenizer(), 'classifier__max_iter': 1000}, **get_tunning_params()}
 
 
 ##
@@ -90,8 +86,7 @@ results = zip(ids, predictions)
 ##
 # Get Keywords
 
-num_keywords = appconfig['classifier']['num_keywords']
-classes_keywords = [(classe, reversed(classifier.get_class_keywords(classe, num_keywords))) for classe in classifier.classes]
+classes_keywords = [(classe, reversed(classifier.get_class_keywords(classe, 25))) for classe in classifier.classes]
 
 
 ##

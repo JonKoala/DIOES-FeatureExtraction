@@ -42,12 +42,7 @@ def to_decimal(match):
 ##
 # Get resources
 
-appconfig = inout.read_yaml('./appconfig')
-
-connectionstring = os.getenv('DIARIOBOT_DATABASE_CONNECTIONSTRING', appconfig['db']['connectionstring'])
-dbi = Dbinterface(connectionstring)
-
-# get publicacoes
+dbi = Dbinterface(os.environ['DIARIOBOT_DATABASE_CONNECTIONSTRING'])
 with dbi.opensession() as session:
     to_extract = session.query(Predicao_Classificacao).join(Predicao_Classificacao.publicacao)
     if not reset_base:

@@ -6,6 +6,7 @@ from classification import Dataset, DatasetEntry, Classifier, evaluation
 from db import Dbinterface
 from db.models import Classe, Classificacao, Keyword_Backlisted, Publicacao
 from nlp import Preprocessor
+from utils import classe_filters
 
 import numpy as np
 import os
@@ -23,14 +24,10 @@ def remove_numbers(text):
 ##
 # Get resources
 
-appconfig = inout.read_yaml('./appconfig')
-
-connectionstring = os.getenv('DIARIOBOT_DATABASE_CONNECTIONSTRING', appconfig['db']['connectionstring'])
-dbi = Dbinterface(connectionstring)
-
+dbi = Dbinterface(os.environ['DIARIOBOT_DATABASE_CONNECTIONSTRING'])
 with dbi.opensession() as session:
     blacklist = list(session.query(Keyword_Backlisted.palavra))
-    classes = list(session.query(Classe).filter(Classe.nome.in_(appconfig['classifier']['classes'])))
+    classes = list(session.query(Classe).filter(Classe.nome.in_(classe_filters)))
     publicacoes = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
 
     dataset = Dataset([DatasetEntry(publicacao.id, remove_numbers(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in publicacoes])
@@ -51,7 +48,7 @@ blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in b
 
 # prepare tuning tools
 pipeline = Classifier(params={'vectorizer__tokenizer': prep.build_tokenizer()}, stop_words=blacklist).pipeline
-cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=appconfig['tuning']['cv_num_splits'])
+cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=3)
 param_grid = {
     'vectorizer__max_df': (0.25, 0.5, 0.75, 1.0),
     'vectorizer__min_df': (1, 2, 3),
@@ -77,7 +74,7 @@ best_index = grid.best_index_
 # persist results
 
 best_params = results['params'][best_index]
-inout.write_json(appconfig['tuning']['params_filepath'], best_params)
+inout.write_json('temp/params.json', best_params)
 
 
 ##
