@@ -37,17 +37,33 @@ blacklist = stopwords + [entry[0] for entry in blacklist]
 
 
 ##
-# Model tuning
+# preprocess stopwords
+
+# i need to preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process
+# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
 
 prep = Preprocessor()
+preprocess = lambda x: prep.strip_accents(prep.lowercase(x))
+tokenize = prep.build_tokenizer(strip_accents=False, lowercase=False)
 
-# preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process (and i preprocess my tokens in the tokenization process)
-# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
-blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in blacklist]
+# repeat the stemming process until i have every variation of my stopwords
+blacklist = set([preprocess(word) for word in blacklist])
+while True:
+    len_blacklist = len(blacklist)
+    tokenized_blacklist = tokenize(' '.join(blacklist))
+    blacklist.update(tokenized_blacklist)
+    if (len_blacklist == len(blacklist)):
+        break
+blacklist = list(blacklist)
 
+
+##
+# Model tuning
+
+hyperparams = {'vectorizer__preprocessor': preprocess, 'vectorizer__tokenizer': tokenize, 'vectorizer__sublinear_tf': True}
 
 # prepare tuning tools
-pipeline = Classifier(params={'vectorizer__tokenizer': prep.build_tokenizer()}, stop_words=blacklist).pipeline
+pipeline = Classifier(params=hyperparams, stop_words=blacklist).pipeline
 cross_validation = model_selection.StratifiedKFold(shuffle=True, n_splits=3)
 param_grid = {
     'vectorizer__max_df': (0.25, 0.5, 0.75, 1.0),

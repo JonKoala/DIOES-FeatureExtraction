@@ -1,9 +1,10 @@
+cloudpickle==0.5.*
 lxml==4.*
 nltk==3.*
 numpy==1.*
-PyYAML==3.*
-scikit-learn==0.*
-SQLAlchemy==1.*
-scipy==1.*
 pyodbc==4.*
+PyYAML==3.*
 requests==2.*
+scikit-learn==0.*
+scipy==1.*
+SQLAlchemy==1.*

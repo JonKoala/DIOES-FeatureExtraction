@@ -23,7 +23,7 @@ class Classifier:
 
     @property
     def params(self):
-        return {**Classifier.model_default_params, **{'vectorizer__stop_words': self.stop_words}, **self.user_params}
+        return {**Classifier.model_default_params, 'vectorizer__stop_words': self.stop_words, **self.user_params}
 
     @property
     def pipeline(self):

@@ -49,25 +49,39 @@ with dbi.opensession() as session:
         to_predict = to_predict.filter(Publicacao.id.notin_(already_predicted))
     to_predict = [(publicacao.id, publicacao.corpo) for publicacao in to_predict]
 
+if len(to_predict) < 1:
+    print('nothing to predict')
+    quit()
 
 stopwords = inout.read_json('./stopwords')
 blacklist = stopwords + [entry[0] for entry in blacklist]
 
 
 ##
-# preprocess stopwords and set hyperparameters
+# preprocess stopwords
+
+# i need to preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process
+# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
 
 prep = Preprocessor()
+preprocess = lambda x: prep.strip_accents(prep.lowercase(x))
+tokenize = prep.build_tokenizer(strip_accents=False, lowercase=False)
 
-# preprocess my stopwords (blacklist). Scikit will remove stopwords AFTER the tokenization process (and i preprocess my tokens in the tokenization process)
-# source: https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/feature_extraction/text.py#L265
-blacklist = [prep.stem(prep.strip_accents(prep.lowercase(token))) for token in blacklist]
-
-hyperparams = {**{'vectorizer__tokenizer': prep.build_tokenizer(), 'classifier__max_iter': 1000}, **get_tunning_params()}
+# repeat the stemming process until i have every variation of my stopwords
+blacklist = set([preprocess(word) for word in blacklist])
+while True:
+    len_blacklist = len(blacklist)
+    tokenized_blacklist = tokenize(' '.join(blacklist))
+    blacklist.update(tokenized_blacklist)
+    if (len_blacklist == len(blacklist)):
+        break
+blacklist = list(blacklist)
 
 
 ##
 # Train the model
+
+hyperparams = {'vectorizer__preprocessor': preprocess, 'vectorizer__tokenizer': tokenize, **get_tunning_params()}
 
 classifier = Classifier(hyperparams, blacklist)
 classifier.train(training_dataset.data, training_dataset.target)
