@@ -15,5 +15,7 @@ RUN pip install --no-cache-dir --trusted-host pypi.python.org --trusted-host pyp
 
 COPY . .
 
+RUN apt-get install dos2unix
+RUN dos2unix docker-entrypoint.sh
 COPY docker-entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]
