@@ -1,6 +1,5 @@
 nltk==3.*
 numpy==1.*
-PyYAML==3.*
 pyodbc==4.*
 scikit-learn==0.*
 scipy==1.*

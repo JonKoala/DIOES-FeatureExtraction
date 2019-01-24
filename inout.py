@@ -4,17 +4,7 @@
 import csv
 import json
 import os
-import yaml
 from sklearn.externals import joblib
-
-def read_yaml(filename):
-    filename = _enforce_file_extension(filename, '.yml')
-
-    with open(filename, 'r', encoding="utf-8") as stream:
-        try:
-            return yaml.load(stream)
-        except:
-            raise
 
 def read_csv(filename, delimiter=';', skip_header=True):
     filename = _enforce_file_extension(filename, '.csv')
