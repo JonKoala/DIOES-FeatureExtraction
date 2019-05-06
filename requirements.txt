@@ -3,4 +3,4 @@ numpy==1.*
 pyodbc==4.*
 scikit-learn==0.*
 scipy==1.*
-SQLAlchemy==1.*
+SQLAlchemy>=1.3
