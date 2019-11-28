@@ -35,12 +35,6 @@ def remove_numbers(text):
 
 dbi = Dbinterface(os.environ['DIARIOBOT_DATABASE_CONNECTIONSTRING'])
 with dbi.opensession() as session:
-    blacklist = list(session.query(Keyword_Backlisted.palavra))
-    classes = list(session.query(Classe).filter(Classe.nome.in_(classe_filters)))
-
-    # get crowdsourced data
-    training_dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
-    training_dataset = Dataset([DatasetEntry(publicacao.id, remove_numbers(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in training_dataset])
 
     # get data to predict
     to_predict = session.query(Publicacao).filter(Publicacao.tipo.in_(publicacao_tipo_filters))
@@ -49,9 +43,16 @@ with dbi.opensession() as session:
         to_predict = to_predict.filter(Publicacao.id.notin_(already_predicted))
     to_predict = [(publicacao.id, publicacao.corpo) for publicacao in to_predict]
 
-if len(to_predict) < 1:
-    print('nothing to predict')
-    quit()
+    if len(to_predict) < 1:
+        print('nothing to predict')
+        quit()
+
+    blacklist = list(session.query(Keyword_Backlisted.palavra))
+    classes = list(session.query(Classe).filter(Classe.nome.in_(classe_filters)))
+
+    # get crowdsourced data
+    training_dataset = session.query(Publicacao).join(Publicacao.classificacao).filter(Classificacao.classe_id.in_(classe.id for classe in classes))
+    training_dataset = Dataset([DatasetEntry(publicacao.id, remove_numbers(publicacao.corpo), publicacao.classificacao.classe_id) for publicacao in training_dataset])
 
 stopwords = inout.read_json('./stopwords')
 blacklist = stopwords + [entry[0] for entry in blacklist]
